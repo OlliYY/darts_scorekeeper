@@ -1,125 +1,153 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(DartsScorekeeperApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
+class DartsScorekeeperApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      debugShowCheckedModeBanner: false,
+      title: 'Darts Scorekeeper',
+      theme: ThemeData(primarySwatch: Colors.green),
+      home: GameScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class GameScreen extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _GameScreenState createState() => _GameScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _GameScreenState extends State<GameScreen> {
+  int player1Score = 501;
+  int player2Score = 501;
 
-  void _incrementCounter() {
+  /// Updates the score of the selected player, ensuring the score does not go negative.
+  /// If the player reaches exactly 0 with a double, they win the game.
+  void updateScore(int player, int score) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      if (player == 1) {
+        if (player1Score - score >= 0) {
+          if (isWinningThrow(1, score)) {
+            showWinnerDialog("Player 1");
+          } else {
+            player1Score -= score;
+          }
+        }
+      } else {
+        if (player2Score - score >= 0) {
+          if (isWinningThrow(2, score)) {
+            showWinnerDialog("Player 2");
+          } else {
+            player2Score -= score;
+          }
+        }
+      }
+    });
+  }
+
+  /// Checks if the player wins with the given score.
+  /// The player must reach exactly 0 and the score must be a double (even number).
+  bool isWinningThrow(int player, int score) {
+    if (player == 1) {
+      return (player1Score - score == 0 && score % 2 == 0);
+    } else {
+      return (player2Score - score == 0 && score % 2 == 0);
+    }
+  }
+
+  /// Displays a dialog box announcing the winner and resets the game.
+  void showWinnerDialog(String winner) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Game Over"),
+          content: Text("$winner wins!"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                resetGame();
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Resets the game by restoring the initial scores.
+  void resetGame() {
+    setState(() {
+      player1Score = 501;
+      player2Score = 501;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+      appBar: AppBar(title: Text('Darts Scorekeeper')),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          PlayerScore(name: 'Player 1', score: player1Score),
+          PlayerScore(name: 'Player 2', score: player2Score),
+          SizedBox(height: 20),
+          NumberPad(onScoreEntered: updateScore),
+        ],
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+    );
+  }
+}
+
+/// A widget that displays a player's name and current score.
+class PlayerScore extends StatelessWidget {
+  final String name;
+  final int score;
+
+  PlayerScore({required this.name, required this.score});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+      child: ListTile(
+        title: Text(name, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        trailing: Text(score.toString(), style: TextStyle(fontSize: 30)),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+/// A numeric keypad that allows players to enter their score.
+/// Each button represents a possible score reduction.
+class NumberPad extends StatelessWidget {
+  final Function(int, int) onScoreEntered;
+
+  NumberPad({required this.onScoreEntered});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: 2,
+      ),
+      itemCount: 9,
+      itemBuilder: (context, index) {
+        int score = (index + 1) * 10;
+        return ElevatedButton(
+          onPressed: () => onScoreEntered(1, score), // For now, assigns score to Player 1
+          child: Text(score.toString(), style: TextStyle(fontSize: 20)),
+        );
+      },
     );
   }
 }
