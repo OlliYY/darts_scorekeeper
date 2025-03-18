@@ -61,13 +61,13 @@ class _GameScreenState extends State<GameScreen> {
     int totalScore = currentThrows.reduce((a, b) => a + b);
 
     if (currentPlayer == 1) {
-      if (player1Score - totalScore == 0 && currentThrows.contains(player1Score)) {
+      if (player1Score - totalScore == 0) {
         showWinnerDialog('Player 1');
       } else if (player1Score - totalScore > 0) {
         player1Score -= totalScore;
       }
     } else {
-      if (player2Score - totalScore == 0 && currentThrows.contains(player2Score)) {
+      if (player2Score - totalScore == 0) {
         showWinnerDialog('Player 2');
       } else if (player2Score - totalScore > 0) {
         player2Score -= totalScore;
@@ -131,7 +131,7 @@ class _GameScreenState extends State<GameScreen> {
             PlayerScore(name: 'Player 1', score: player1Score, isCurrent: currentPlayer == 1),
             PlayerScore(name: 'Player 2', score: player2Score, isCurrent: currentPlayer == 2),
             SizedBox(height: 20),
-            ThrowDisplay(throws: currentThrows), // Added missing ThrowDisplay
+            ThrowDisplay(throws: currentThrows), // Fixed missing ThrowDisplay
             SizedBox(height: 20),
             NumberPad(onScoreEntered: enterScore, onMultiplierSelected: (String value) {
               setState(() {
@@ -145,60 +145,66 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
-/// A numeric keypad for score entry, including multipliers.
-class NumberPad extends StatelessWidget {
-  final Function(int) onScoreEntered;
-  final Function(String) onMultiplierSelected;
-  final List<int> scores = List.generate(25, (index) => index + 1); // Numbers 1-25
+/// A widget that displays the player's name and current score.
+class PlayerScore extends StatelessWidget {
+  final String name;
+  final int score;
+  final bool isCurrent;
 
-  NumberPad({required this.onScoreEntered, required this.onMultiplierSelected});
+  PlayerScore({required this.name, required this.score, required this.isCurrent});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 5,
+      color: isCurrent ? Colors.green[800] : Colors.grey[850], // Highlight current player
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 20, horizontal: 30),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            ElevatedButton(
-              onPressed: () => onMultiplierSelected("Double"),
-              child: Text("Double", style: TextStyle(fontSize: 18)),
+            Text(
+              name,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
             ),
-            SizedBox(width: 10),
-            ElevatedButton(
-              onPressed: () => onMultiplierSelected("Triple"),
-              child: Text("Triple", style: TextStyle(fontSize: 18)),
+            Text(
+              score.toString(),
+              style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.greenAccent),
             ),
           ],
         ),
-        SizedBox(height: 10),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 5,
-            childAspectRatio: 1.5,
-            crossAxisSpacing: 5,
-            mainAxisSpacing: 5,
+      ),
+    );
+  }
+}
+
+/// A widget that displays the three most recent dart throws.
+class ThrowDisplay extends StatelessWidget {
+  final List<int> throws;
+
+  ThrowDisplay({required this.throws});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: throws.map((throwScore) {
+        return Container(
+          width: 50,
+          height: 50,
+          alignment: Alignment.center,
+          margin: EdgeInsets.symmetric(horizontal: 5),
+          decoration: BoxDecoration(
+            color: Colors.grey[850],
+            borderRadius: BorderRadius.circular(8),
           ),
-          itemCount: scores.length,
-          itemBuilder: (context, index) {
-            int score = scores[index];
-            return ElevatedButton(
-              onPressed: () => onScoreEntered(score),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.all(8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                backgroundColor: Colors.green[700],
-              ),
-              child: Text(
-                score.toString(),
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            );
-          },
-        ),
-      ],
+          child: Text(
+            throwScore.toString(),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        );
+      }).toList(),
     );
   }
 }
