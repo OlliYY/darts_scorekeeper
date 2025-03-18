@@ -213,7 +213,7 @@ class ThrowDisplay extends StatelessWidget {
 class NumberPad extends StatelessWidget {
   final Function(int) onScoreEntered;
   final Function(String) onMultiplierSelected;
-  final List<int> scores = List.generate(25, (index) => index + 1); // Numbers 1-25
+  final List<int> scores = List.generate(20, (index) => index + 1) + [25]; // Numbers 1-20 and 25
 
   NumberPad({required this.onScoreEntered, required this.onMultiplierSelected});
 
