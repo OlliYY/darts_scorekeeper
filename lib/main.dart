@@ -208,3 +208,61 @@ class ThrowDisplay extends StatelessWidget {
     );
   }
 }
+
+/// A numeric keypad for score entry, including multipliers.
+class NumberPad extends StatelessWidget {
+  final Function(int) onScoreEntered;
+  final Function(String) onMultiplierSelected;
+  final List<int> scores = List.generate(25, (index) => index + 1); // Numbers 1-25
+
+  NumberPad({required this.onScoreEntered, required this.onMultiplierSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () => onMultiplierSelected("Double"),
+              child: Text("Double", style: TextStyle(fontSize: 18)),
+            ),
+            SizedBox(width: 10),
+            ElevatedButton(
+              onPressed: () => onMultiplierSelected("Triple"),
+              child: Text("Triple", style: TextStyle(fontSize: 18)),
+            ),
+          ],
+        ),
+        SizedBox(height: 10),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 5,
+            childAspectRatio: 1.5,
+            crossAxisSpacing: 5,
+            mainAxisSpacing: 5,
+          ),
+          itemCount: scores.length,
+          itemBuilder: (context, index) {
+            int score = scores[index];
+            return ElevatedButton(
+              onPressed: () => onScoreEntered(score),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.all(8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                backgroundColor: Colors.green[700],
+              ),
+              child: Text(
+                score.toString(),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
