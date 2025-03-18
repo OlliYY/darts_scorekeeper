@@ -10,7 +10,10 @@ class DartsScorekeeperApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Darts Scorekeeper',
-      theme: ThemeData(primarySwatch: Colors.green),
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        primarySwatch: Colors.green,
+      ),
       home: GameScreen(),
     );
   }
@@ -24,42 +27,66 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> {
   int player1Score = 501;
   int player2Score = 501;
+  int currentPlayer = 1;
+  List<int> currentThrows = [0, 0, 0];
+  int throwIndex = 0;
+  String multiplier = '';
 
-  /// Updates the score of the selected player, ensuring the score does not go negative.
-  /// If the player reaches exactly 0 with a double, they win the game.
-  void updateScore(int player, int score) {
+  /// Handles score input based on the selected number and applies the multiplier if active.
+  void enterScore(int score) {
     setState(() {
-      if (player == 1) {
-        if (player1Score - score >= 0) {
-          if (isWinningThrow(1, score)) {
-            showWinnerDialog("Player 1");
-          } else {
-            player1Score -= score;
-          }
-        }
-      } else {
-        if (player2Score - score >= 0) {
-          if (isWinningThrow(2, score)) {
-            showWinnerDialog("Player 2");
-          } else {
-            player2Score -= score;
-          }
-        }
+      int calculatedScore = score;
+      
+      // Apply multiplier if selected
+      if (multiplier == 'Double') {
+        calculatedScore = score * 2;
+      } else if (multiplier == 'Triple') {
+        calculatedScore = score * 3;
+      }
+
+      // Store the throw in the current throw list
+      currentThrows[throwIndex] = calculatedScore;
+      throwIndex++;
+      multiplier = ''; // Reset multiplier after use
+
+      // Switch turn after three throws
+      if (throwIndex == 3) {
+        finalizeTurn();
       }
     });
   }
 
-  /// Checks if the player wins with the given score.
-  /// The player must reach exactly 0 and the score must be a double (even number).
-  bool isWinningThrow(int player, int score) {
-    if (player == 1) {
-      return (player1Score - score == 0 && score % 2 == 0);
+  /// Finalizes the turn by calculating total points and switching players.
+  void finalizeTurn() {
+    int totalScore = currentThrows.reduce((a, b) => a + b);
+
+    if (currentPlayer == 1) {
+      if (player1Score - totalScore == 0 && currentThrows.contains(player1Score)) {
+        showWinnerDialog('Player 1');
+      } else if (player1Score - totalScore > 0) {
+        player1Score -= totalScore;
+      }
     } else {
-      return (player2Score - score == 0 && score % 2 == 0);
+      if (player2Score - totalScore == 0 && currentThrows.contains(player2Score)) {
+        showWinnerDialog('Player 2');
+      } else if (player2Score - totalScore > 0) {
+        player2Score -= totalScore;
+      }
     }
+
+    switchPlayer();
   }
 
-  /// Displays a dialog box announcing the winner and resets the game.
+  /// Switches turn to the next player and resets throw data.
+  void switchPlayer() {
+    setState(() {
+      currentPlayer = currentPlayer == 1 ? 2 : 1;
+      currentThrows = [0, 0, 0];
+      throwIndex = 0;
+    });
+  }
+
+  /// Displays a dialog announcing the winner and resets the game.
   void showWinnerDialog(String winner) {
     showDialog(
       context: context,
@@ -81,11 +108,15 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  /// Resets the game by restoring the initial scores.
+  /// Resets the game to the initial state.
   void resetGame() {
     setState(() {
       player1Score = 501;
       player2Score = 501;
+      currentPlayer = 1;
+      currentThrows = [0, 0, 0];
+      throwIndex = 0;
+      multiplier = '';
     });
   }
 
@@ -93,61 +124,82 @@ class _GameScreenState extends State<GameScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Darts Scorekeeper')),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          PlayerScore(name: 'Player 1', score: player1Score),
-          PlayerScore(name: 'Player 2', score: player2Score),
-          SizedBox(height: 20),
-          NumberPad(onScoreEntered: updateScore),
-        ],
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            PlayerScore(name: 'Player 1', score: player1Score, isCurrent: currentPlayer == 1),
+            PlayerScore(name: 'Player 2', score: player2Score, isCurrent: currentPlayer == 2),
+            SizedBox(height: 20),
+            ThrowDisplay(throws: currentThrows),
+            SizedBox(height: 20),
+            NumberPad(onScoreEntered: enterScore, onMultiplierSelected: (String value) {
+              setState(() {
+                multiplier = value;
+              });
+            }),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// A widget that displays a player's name and current score.
-class PlayerScore extends StatelessWidget {
-  final String name;
-  final int score;
-
-  PlayerScore({required this.name, required this.score});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-      child: ListTile(
-        title: Text(name, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        trailing: Text(score.toString(), style: TextStyle(fontSize: 30)),
-      ),
-    );
-  }
-}
-
-/// A numeric keypad that allows players to enter their score.
-/// Each button represents a possible score reduction.
+/// A numeric keypad for score entry, including multipliers.
 class NumberPad extends StatelessWidget {
-  final Function(int, int) onScoreEntered;
+  final Function(int) onScoreEntered;
+  final Function(String) onMultiplierSelected;
+  final List<int> scores = List.generate(25, (index) => index + 1); // Numbers 1-25
 
-  NumberPad({required this.onScoreEntered});
+  NumberPad({required this.onScoreEntered, required this.onMultiplierSelected});
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 2,
-      ),
-      itemCount: 9,
-      itemBuilder: (context, index) {
-        int score = (index + 1) * 10;
-        return ElevatedButton(
-          onPressed: () => onScoreEntered(1, score), // For now, assigns score to Player 1
-          child: Text(score.toString(), style: TextStyle(fontSize: 20)),
-        );
-      },
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () => onMultiplierSelected("Double"),
+              child: Text("Double", style: TextStyle(fontSize: 18)),
+            ),
+            SizedBox(width: 10),
+            ElevatedButton(
+              onPressed: () => onMultiplierSelected("Triple"),
+              child: Text("Triple", style: TextStyle(fontSize: 18)),
+            ),
+          ],
+        ),
+        SizedBox(height: 10),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 5,
+            childAspectRatio: 1.5,
+            crossAxisSpacing: 5,
+            mainAxisSpacing: 5,
+          ),
+          itemCount: scores.length,
+          itemBuilder: (context, index) {
+            int score = scores[index];
+            return ElevatedButton(
+              onPressed: () => onScoreEntered(score),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.all(8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                backgroundColor: Colors.green[700],
+              ),
+              child: Text(
+                score.toString(),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }
+

@@ -1,0 +1,2 @@
+C:/Users/OlliY/Koulu kurssit/Cross-platform MAD/darts_scorekeeper/android/app/.cxx/Debug/n1yc7264/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/OlliY/Koulu kurssit/Cross-platform MAD/darts_scorekeeper/android/app/.cxx/Debug/n1yc7264/x86_64/CMakeFiles/rebuild_cache.dir
