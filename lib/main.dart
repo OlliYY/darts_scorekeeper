@@ -5,6 +5,8 @@ void main() {
 }
 
 class DartsScorekeeperApp extends StatelessWidget {
+  const DartsScorekeeperApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -20,6 +22,8 @@ class DartsScorekeeperApp extends StatelessWidget {
 }
 
 class GameScreen extends StatefulWidget {
+  const GameScreen({super.key});
+
   @override
   _GameScreenState createState() => _GameScreenState();
 }
@@ -151,7 +155,7 @@ class PlayerScore extends StatelessWidget {
   final int score;
   final bool isCurrent;
 
-  PlayerScore({required this.name, required this.score, required this.isCurrent});
+  const PlayerScore({super.key, required this.name, required this.score, required this.isCurrent});
 
   @override
   Widget build(BuildContext context) {
@@ -181,9 +185,9 @@ class PlayerScore extends StatelessWidget {
 
 /// A widget that displays the three most recent dart throws.
 class ThrowDisplay extends StatelessWidget {
-  final List<int> throws;
+  final List<int>throws;
 
-  ThrowDisplay({required this.throws});
+  const ThrowDisplay({super.key, required this.throws});
 
   @override
   Widget build(BuildContext context) {
@@ -213,9 +217,9 @@ class ThrowDisplay extends StatelessWidget {
 class NumberPad extends StatelessWidget {
   final Function(int) onScoreEntered;
   final Function(String) onMultiplierSelected;
-  final List<int> scores = List.generate(20, (index) => index + 1) + [25]; // Numbers 1-20 and 25
+  final List<int> scores = List.generate(20, (index) => index + 1) + [25, 0]; // 0 = Miss
 
-  NumberPad({required this.onScoreEntered, required this.onMultiplierSelected});
+  NumberPad({super.key, required this.onScoreEntered, required this.onMultiplierSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -248,15 +252,17 @@ class NumberPad extends StatelessWidget {
           itemCount: scores.length,
           itemBuilder: (context, index) {
             int score = scores[index];
+            bool isMiss = score == 0;
+
             return ElevatedButton(
               onPressed: () => onScoreEntered(score),
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.all(8),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                backgroundColor: Colors.green[700],
+                backgroundColor: isMiss ? Colors.redAccent : Colors.green[700],
               ),
               child: Text(
-                score.toString(),
+                isMiss ? 'Miss' : score.toString(),
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             );
