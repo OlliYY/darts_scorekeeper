@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'screens/game_screen.dart';
+import 'screens/select_players_screen.dart';
+
 void main() {
   runApp(const DartsScorekeeperApp());
 }
@@ -17,7 +18,7 @@ class DartsScorekeeperApp extends StatelessWidget {
         brightness: Brightness.dark,
         primarySwatch: Colors.green,
       ),
-      home: const GameScreen(), // Loads the main screen of the game
+      home: const SelectPlayersScreen(), // Loads the main screen of the game
     );
   }
 }

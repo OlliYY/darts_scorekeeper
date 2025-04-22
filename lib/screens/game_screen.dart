@@ -7,11 +7,15 @@ import 'add_player_screen.dart';
 
 /// The main game screen containing score, throw display and input buttons.
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key});
+  final Map<String, dynamic> player1;
+  final Map<String, dynamic> player2;
+
+  const GameScreen({super.key, required this.player1, required this.player2});
 
   @override
-  _GameScreenState createState() => _GameScreenState();
+  State<GameScreen> createState() => _GameScreenState();
 }
+
 
 class _GameScreenState extends State<GameScreen> {
   int player1Score = 501;
@@ -139,13 +143,13 @@ class _GameScreenState extends State<GameScreen> {
         child: Column(
           children: [
             PlayerScore(
-              name: 'Player 1',
+              name: widget.player1['name'],
               score: player1Score,
               lastTurn: lastPlayer1Turn,
               isCurrent: currentPlayer == 1,
             ),
             PlayerScore(
-              name: 'Player 2',
+              name: widget.player2['name'],
               score: player2Score,
               lastTurn: lastPlayer2Turn,
               isCurrent: currentPlayer == 2,
