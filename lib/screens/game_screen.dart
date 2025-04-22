@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../widgets/player_score.dart';
 import '../widgets/throw_display.dart';
 import '../widgets/number_pad.dart';
+import 'add_player_screen.dart';
+
 
 /// The main game screen containing score, throw display and input buttons.
 class GameScreen extends StatefulWidget {
@@ -117,7 +119,21 @@ class _GameScreenState extends State<GameScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Darts Scorekeeper')),
+      appBar: AppBar(
+      title: const Text('Darts Scorekeeper'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.person_add),
+          tooltip: 'Add Player',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AddPlayerScreen()),
+      );
+    },
+  ),
+],
+),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
