@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase/supabase.dart';
+import '../supabase_config.dart'; // tarvitaan URL ja avain
+
 
 /// A screen for adding a new player to the Supabase database.
 class AddPlayerScreen extends StatefulWidget {
@@ -11,7 +13,10 @@ class AddPlayerScreen extends StatefulWidget {
 
 class _AddPlayerScreenState extends State<AddPlayerScreen> {
   final TextEditingController _nameController = TextEditingController();
-  final SupabaseClient supabase = Supabase.instance.client;
+  
+   // Manually create the Supabase client
+  final SupabaseClient supabase = SupabaseClient(supabaseUrl, supabaseAnonKey);
+
 
   /// Sends a new player to the Supabase 'players' table
   Future<void> _addPlayer() async {

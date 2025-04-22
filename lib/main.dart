@@ -1,19 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/game_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'supabase_config.dart';
-
-
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Supabase with project URL and anon key
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-  );
-
+void main() {
   runApp(const DartsScorekeeperApp());
 }
 
@@ -34,5 +21,3 @@ class DartsScorekeeperApp extends StatelessWidget {
     );
   }
 }
-
-
