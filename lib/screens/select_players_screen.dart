@@ -46,24 +46,34 @@ class _SelectPlayersScreenState extends State<SelectPlayersScreen> {
     }
   }
 
-  /// Start game with selected players
-  void startGame() {
-    if (selectedPlayer1 != null && selectedPlayer2 != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => GameScreen(
-            player1: selectedPlayer1!,
-            player2: selectedPlayer2!,
-          ),
-        ),
-      );
+  /// Delete player from Supabase and refresh list
+  Future<void> deletePlayer(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Player'),
+        content: const Text('Are you sure you want to delete this player?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await supabase.from('players').delete().eq('id', id);
+      fetchPlayers();
+      setState(() {
+        if (selectedPlayer1?['id'] == id) selectedPlayer1 = null;
+        if (selectedPlayer2?['id'] == id) selectedPlayer2 = null;
+      });
     }
   }
 
   /// Build a selectable player list tile
   Widget buildPlayerTile(Map<String, dynamic> player) {
     final isSelected = player == selectedPlayer1 || player == selectedPlayer2;
+
     return ListTile(
       title: Text(player['name']),
       tileColor: isSelected ? Colors.green[700] : null,
@@ -76,6 +86,11 @@ class _SelectPlayersScreenState extends State<SelectPlayersScreen> {
           }
         });
       },
+      trailing: IconButton(
+        icon: const Icon(Icons.delete, color: Colors.redAccent),
+        onPressed: () => deletePlayer(player['id']),
+        tooltip: 'Delete Player',
+      ),
     );
   }
 
@@ -123,5 +138,20 @@ class _SelectPlayersScreenState extends State<SelectPlayersScreen> {
         ],
       ),
     );
+  }
+
+  /// Start game with selected players
+  void startGame() {
+    if (selectedPlayer1 != null && selectedPlayer2 != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GameScreen(
+            player1: selectedPlayer1!,
+            player2: selectedPlayer2!,
+          ),
+        ),
+      );
+    }
   }
 }

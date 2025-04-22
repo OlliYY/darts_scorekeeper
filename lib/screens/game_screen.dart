@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:supabase/supabase.dart';
+import '../supabase_config.dart';
 import '../widgets/player_score.dart';
 import '../widgets/throw_display.dart';
 import '../widgets/number_pad.dart';
-import 'add_player_screen.dart';
-import 'package:supabase/supabase.dart';
-import '../supabase_config.dart';
 
-
-
-/// The main game screen containing score, throw display and input buttons.
 class GameScreen extends StatefulWidget {
   final Map<String, dynamic> player1;
   final Map<String, dynamic> player2;
@@ -17,9 +13,7 @@ class GameScreen extends StatefulWidget {
 
   @override
   State<GameScreen> createState() => _GameScreenState();
-  
 }
-
 
 class _GameScreenState extends State<GameScreen> {
   int player1Score = 501;
@@ -34,103 +28,105 @@ class _GameScreenState extends State<GameScreen> {
 
   final SupabaseClient supabase = SupabaseClient(supabaseUrl, supabaseAnonKey);
 
-
-  /// Handles score input based on the selected number and applies the multiplier if active.
   void enterScore(int score) {
-    setState(() {
-      int calculatedScore = score;
+    int calculatedScore = score;
+    bool isDouble = false;
 
-      // Apply multiplier if selected
-      if (multiplier == 'Double') {
-        calculatedScore = score * 2;
-      } else if (multiplier == 'Triple') {
-        calculatedScore = score * 3;
-      }
+    if (multiplier == 'Double') {
+      calculatedScore *= 2;
+      isDouble = true;
+    } else if (multiplier == 'Triple') {
+      calculatedScore *= 3;
+    }
+    multiplier = '';
 
-      // Store the throw in the current throw list
-      currentThrows[throwIndex] = calculatedScore;
-      throwIndex++;
-      multiplier = ''; // Reset multiplier after use
+    int currentScore = currentPlayer == 1 ? player1Score : player2Score;
+    int remaining = currentScore - calculatedScore;
 
-      // Switch turn after three throws
-      if (throwIndex == 3) {
-        finalizeTurn();
-      }
-    });
-  }
-
-  /// Finalizes the turn by calculating total points and switching players.
-  void finalizeTurn() {
-    int totalScore = currentThrows.reduce((a, b) => a + b);
-
-    if (currentPlayer == 1) {
-      lastPlayer1Turn = totalScore;
-      if (player1Score - totalScore == 0) {
-        showWinnerDialog('Player 1');
-      } else if (player1Score - totalScore > 0) {
-        player1Score -= totalScore;
-      }
-    } else {
-      lastPlayer2Turn = totalScore;
-      if (player2Score - totalScore == 0) {
-        showWinnerDialog('Player 2');
-      } else if (player2Score - totalScore > 0) {
-        player2Score -= totalScore;
-      }
+    // Invalid win attempt (zero without double) or overshoot
+    if (remaining < 0 || (remaining == 0 && !isDouble)) {
+      setState(() {
+        switchPlayer();
+      });
+      return;
     }
 
-    switchPlayer();
+    // Valid win
+    if (remaining == 0 && isDouble) {
+  if (currentPlayer == 1) {
+    player1Score = 0;
+  } else {
+    player2Score = 0;
   }
 
-  /// Switches turn to the next player and resets throw data.
-  void switchPlayer() {
-    setState(() {
-      currentPlayer = currentPlayer == 1 ? 2 : 1;
-      currentThrows = [0, 0, 0];
-      throwIndex = 0;
-    });
-  }
-
-  /// Displays a dialog announcing the winner and resets the game.
-void showWinnerDialog(String winnerName) async {
-  final winnerId = (winnerName == widget.player1['name'])
-      ? widget.player1['id']
-      : widget.player2['id'];
-
-  final winner = widget.player1['id'] == winnerId ? widget.player1 : widget.player2;
-
-  try {
-    await supabase
-        .from('players')
-        .update({'wins': (winner['wins'] ?? 0) + 1})
-        .eq('id', winnerId);
-  } catch (e) {
-    print('Error updating wins: $e');
-  }
-
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text("Game Over"),
-        content: Text("$winnerName wins!"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              resetGame();
-            },
-            child: const Text("OK"),
-          ),
-        ],
-      );
-    },
+  updateWinsAndShowDialog(
+    currentPlayer == 1 ? widget.player1['id'] : widget.player2['id'],
+    currentPlayer == 1 ? widget.player1['name'] : widget.player2['name'],
   );
+  return;
 }
 
 
+    // Normal scoring
+    setState(() {
+      if (currentPlayer == 1) {
+        player1Score = remaining;
+      } else {
+        player2Score = remaining;
+      }
 
-  /// Resets the game to the initial state.
+      currentThrows[throwIndex] = calculatedScore;
+      throwIndex++;
+
+      if (throwIndex == 3) {
+        if (currentPlayer == 1) {
+          lastPlayer1Turn = currentThrows.reduce((a, b) => a + b);
+        } else {
+          lastPlayer2Turn = currentThrows.reduce((a, b) => a + b);
+        }
+        switchPlayer();
+      }
+    });
+  }
+
+  void switchPlayer() {
+    currentPlayer = currentPlayer == 1 ? 2 : 1;
+    currentThrows = [0, 0, 0];
+    throwIndex = 0;
+  }
+
+  void updateWinsAndShowDialog(int playerId, String playerName) async {
+    try {
+      await supabase
+          .from('players')
+          .update({
+            'wins': ((currentPlayer == 1 ? widget.player1['wins'] : widget.player2['wins']) ?? 0) + 1
+          })
+          .eq('id', playerId);
+    } catch (e) {
+      print('Error updating wins: $e');
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Game Over"),
+          content: Text("$playerName wins!"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                resetGame();
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void resetGame() {
     setState(() {
       player1Score = 501;
@@ -147,21 +143,7 @@ void showWinnerDialog(String winnerName) async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-      title: const Text('Darts Scorekeeper'),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.person_add),
-          tooltip: 'Add Player',
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AddPlayerScreen()),
-      );
-    },
-  ),
-],
-),
+      appBar: AppBar(title: const Text('Darts Scorekeeper')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
