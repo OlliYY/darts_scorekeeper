@@ -1,0 +1,2 @@
+const supabaseUrl = 'https://baolxdjwkzpsylzwguyt.supabase.com';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhb2x4ZGp3a3pwc3lsendndXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ3MjAzOTYsImV4cCI6MjA2MDI5NjM5Nn0.4_QEZ-MC8H-2vF0TRtneAT10PYSf7k8BQQe0VvCwl_w';
