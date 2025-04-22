@@ -3,6 +3,9 @@ import '../widgets/player_score.dart';
 import '../widgets/throw_display.dart';
 import '../widgets/number_pad.dart';
 import 'add_player_screen.dart';
+import 'package:supabase/supabase.dart';
+import '../supabase_config.dart';
+
 
 
 /// The main game screen containing score, throw display and input buttons.
@@ -14,6 +17,7 @@ class GameScreen extends StatefulWidget {
 
   @override
   State<GameScreen> createState() => _GameScreenState();
+  
 }
 
 
@@ -27,6 +31,9 @@ class _GameScreenState extends State<GameScreen> {
 
   int lastPlayer1Turn = 0;
   int lastPlayer2Turn = 0;
+
+  final SupabaseClient supabase = SupabaseClient(supabaseUrl, supabaseAnonKey);
+
 
   /// Handles score input based on the selected number and applies the multiplier if active.
   void enterScore(int score) {
@@ -85,26 +92,43 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   /// Displays a dialog announcing the winner and resets the game.
-  void showWinnerDialog(String winner) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Game Over"),
-          content: Text("$winner wins!"),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                resetGame();
-              },
-              child: Text("OK"),
-            ),
-          ],
-        );
-      },
-    );
+void showWinnerDialog(String winnerName) async {
+  final winnerId = (winnerName == widget.player1['name'])
+      ? widget.player1['id']
+      : widget.player2['id'];
+
+  final winner = widget.player1['id'] == winnerId ? widget.player1 : widget.player2;
+
+  try {
+    await supabase
+        .from('players')
+        .update({'wins': (winner['wins'] ?? 0) + 1})
+        .eq('id', winnerId);
+  } catch (e) {
+    print('Error updating wins: $e');
   }
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text("Game Over"),
+        content: Text("$winnerName wins!"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              resetGame();
+            },
+            child: const Text("OK"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
 
   /// Resets the game to the initial state.
   void resetGame() {
