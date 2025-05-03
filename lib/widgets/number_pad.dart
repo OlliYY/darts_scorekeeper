@@ -44,11 +44,14 @@ class NumberPad extends StatelessWidget {
           ),
           itemCount: scores.length,
           itemBuilder: (context, index) {
-            int score = scores[index];
-            bool isMiss = score == 0;
+            final int score = scores[index];
+            final bool isMiss = score == 0;
 
             return ElevatedButton(
-              onPressed: () => onScoreEntered(score),
+              onPressed: () {
+                print('Pressed score: $score (type: ${score.runtimeType})');
+                onScoreEntered(score);
+              },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.all(8),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

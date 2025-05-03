@@ -28,46 +28,77 @@ class _GameScreenState extends State<GameScreen> {
 
   final SupabaseClient supabase = SupabaseClient(supabaseUrl, supabaseAnonKey);
 
+  // Called when a score button is pressed
   void enterScore(int score) {
+    // Prevent scoring after the game is already won
+    if (player1Score == 0 || player2Score == 0) {
+      print("Game already ended — ignoring further input.");
+      return;
+    }
+
     int calculatedScore = score;
     bool isDouble = false;
 
+    //Apply multiplier
     if (multiplier == 'Double') {
       calculatedScore *= 2;
       isDouble = true;
     } else if (multiplier == 'Triple') {
       calculatedScore *= 3;
     }
-    multiplier = '';
+
+    print("Raw input score: $score");
+    print("Calculated score after multiplier: $calculatedScore");
+    print("Multiplier was double: $isDouble");
+
+    multiplier = ''; // Resets multiplier after use
 
     int currentScore = currentPlayer == 1 ? player1Score : player2Score;
     int remaining = currentScore - calculatedScore;
 
-    // Invalid win attempt (zero without double) or overshoot
+    print("Current Score: $currentScore");
+    print("Remaining Score After Throw: $remaining");
+
+    //Check for win: SCore must be exactly 0 and last throw must be a double multiplier
+    if (remaining == 0 && isDouble) {
+      print("Valid win detected for player $currentPlayer.");
+
+      setState(() {
+        if (currentPlayer == 1) {
+          player1Score = 0;
+        } else {
+          player2Score = 0;
+        }
+      });
+
+      final winnerId = (currentPlayer == 1
+          ? widget.player1['id'] as String
+          : widget.player2['id'] as String);
+
+      final winnerName = (currentPlayer == 1
+          ? widget.player1['name'] as String
+          : widget.player2['name'] as String);
+
+      final winnerWins = (currentPlayer == 1
+          ? widget.player1['wins'] as int? ?? 0
+          : widget.player2['wins'] as int? ?? 0);
+
+      updateWinsAndShowDialog(winnerId, winnerName, winnerWins + 1);
+      return;
+    }
+
+    // If overshootinf or reaching 0 without double - invalid throw
     if (remaining < 0 || (remaining == 0 && !isDouble)) {
+      print("Invalid win attempt or overshoot.");
       setState(() {
         switchPlayer();
       });
       return;
     }
 
-    // Valid win
-    if (remaining == 0 && isDouble) {
-  if (currentPlayer == 1) {
-    player1Score = 0;
-  } else {
-    player2Score = 0;
-  }
+    // Apply score normally
+    print("Score valid, applying it.");
 
-  updateWinsAndShowDialog(
-    currentPlayer == 1 ? widget.player1['id'] : widget.player2['id'],
-    currentPlayer == 1 ? widget.player1['name'] : widget.player2['name'],
-  );
-  return;
-}
-
-
-    // Normal scoring
     setState(() {
       if (currentPlayer == 1) {
         player1Score = remaining;
@@ -75,9 +106,12 @@ class _GameScreenState extends State<GameScreen> {
         player2Score = remaining;
       }
 
-      currentThrows[throwIndex] = calculatedScore;
-      throwIndex++;
+      if (throwIndex < 3) {
+        currentThrows[throwIndex] = calculatedScore;
+        throwIndex++;
+      }
 
+      //  End turn after 3 throws
       if (throwIndex == 3) {
         if (currentPlayer == 1) {
           lastPlayer1Turn = currentThrows.reduce((a, b) => a + b);
@@ -89,20 +123,17 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
+  // Switches to the other players turn
   void switchPlayer() {
     currentPlayer = currentPlayer == 1 ? 2 : 1;
     currentThrows = [0, 0, 0];
     throwIndex = 0;
   }
 
-  void updateWinsAndShowDialog(int playerId, String playerName) async {
+  // Updates the win count in the supabase database and shows dialog
+  void updateWinsAndShowDialog(String playerId, String playerName, int newWins) async {
     try {
-      await supabase
-          .from('players')
-          .update({
-            'wins': ((currentPlayer == 1 ? widget.player1['wins'] : widget.player2['wins']) ?? 0) + 1
-          })
-          .eq('id', playerId);
+      await supabase.from('players').update({'wins': newWins}).eq('id', playerId);
     } catch (e) {
       print('Error updating wins: $e');
     }
@@ -127,6 +158,7 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  // Resers the game state
   void resetGame() {
     setState(() {
       player1Score = 501;
