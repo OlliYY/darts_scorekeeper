@@ -118,7 +118,12 @@ class _GameScreenState extends State<GameScreen> {
         } else {
           lastPlayer2Turn = currentThrows.reduce((a, b) => a + b);
         }
-        switchPlayer();
+        // Waits 5 second until next players turn
+        Future.delayed(const Duration(milliseconds: 3000), () {
+          setState(() {
+            switchPlayer();
+          });
+        });
       }
     });
   }
